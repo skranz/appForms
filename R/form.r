@@ -63,7 +63,7 @@ formSubmitButton = function(label="Ok", form=getForm()) {
   restore.point("formSubmitButton")
 
   id = paste0(form$prefix,"submitBtn",form$postfix)
-  actionButton(id, label)
+  HTML(as.character(actionButton(id, label)))
 }
 
 addFormHandlers = function(form, success.handler=form$success.handler) {
@@ -93,19 +93,20 @@ viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.
   runEventsApp(app, launch.browser=launch.browser)
 }
 
-
-markdownFormUI = function(file=NULL, text=NULL, parse.form=TRUE, form=NULL, params = NULL, set.UTF8=TRUE, whiskers=!is.null(params), knit=FALSE, parent.env = parent.frame(), fragment.only=FALSE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE) {
+markdownFormUI = function(file=form[["file"]], text=form$md_text, parse.form=TRUE, form=NULL, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE) {
   restore.point("markdownFormUI")
 
-  if (!is.null(file)) {
+  if (!is.null(file) & is.null(text)) {
     text = readLines(file,warn = FALSE)
+  } else {
+    if (length(text)==1) text = sep.lines(text)
   }
+
   if (set.UTF8)
     Encoding(text)<-"UTF-8"
 
   if (parse.form & is.null(form)) {
-    fm = parse_yaml_front_matter(text)
-    form = fm$form
+    form = get.front.matter.form(text=text)
   }
 
 
@@ -120,7 +121,9 @@ markdownFormUI = function(file=NULL, text=NULL, parse.form=TRUE, form=NULL, para
     text = sep.lines(text)
     text = select.markdown.blocks(text, params)
   }
-  if (whiskers & !is.null(params)) {
+  if (whiskers) {
+    params$form = form
+    setForm(form)
     text = paste0(text, collapse="\n")
     text = replace.whiskers(text,params)
   }
@@ -204,7 +207,7 @@ checkFormValues = function(values, form, fields=form$fields[field.names], field.
     ret
   })
   names(li)= field.names
-  values = sapply(li, function(el) el$value)
+  values = lapply(li, function(el) el$value)
   failed.fields = field.names[sapply(li, function(el) !el$ok)]
   ok = length(failed.fields) == 0
   if (get.failure.msg) {
@@ -289,7 +292,7 @@ fieldFailureMsg = function(field,value, use.custom = TRUE) {
 }
 
 
-fieldInput = function(name=field$name, label=field$label, value=field$value, type=field$type, min=field$min, max=field$max, step=field$step, maxchar=field$maxchar, choices=field$choices, prefix=form$prefix, postfix=form$postfix, field=fields[[name]], fields=form$fields, field_alert = !is.false(opts$field_alert), opts=form$opts, form=getForm()) {
+fieldInput = function(name=field$name, label=field$label, value=first.none.null(form$params[[name]],field$value), type=field$type, min=field$min, max=field$max, step=field$step, maxchar=field$maxchar, choices=field$choices, prefix=form$prefix, postfix=form$postfix, field=fields[[name]], fields=form$fields, field_alert = !is.false(opts$field_alert), opts=form$opts, form=getForm()) {
 
   restore.point("fieldInput")
 
@@ -299,10 +302,10 @@ fieldInput = function(name=field$name, label=field$label, value=field$value, typ
   id = paste0(prefix,name,postfix)
   if (is.null(field[["choices"]])) {
     if (is.null(value)) value = ""
-    ret = textInputVector(id, label=label, value="")
+    ret = textInputVector(id, label=label, value=value)
   } else {
     li = as.list(choices)
-    ret = as.character(selectizeInput(id, label,choices=choices))
+    ret = as.character(selectizeInput(id, label,choices=choices, selected=value))
   }
   if (field_alert) {
     alert_id = paste0(id,"__Alert")

@@ -6,6 +6,19 @@ copy.into.missing.fields = function(dest, source) {
   dest
 }
 
+examples.first.none.null = function() {
+  get.none.null(NULL, 5,4)
+}
+
+first.none.null = function(...) {
+  args = list(...)
+  for (val in args) {
+    if (!is.null(val)) return(val)
+  }
+  return(NULL)
+
+}
+
 
 colored.html = function(txt, color="blue") {
   if (is.null(color)) return(txt)

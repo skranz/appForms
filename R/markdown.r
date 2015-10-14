@@ -1,3 +1,43 @@
+init.markdown.form = function(form, start.token = "# <--START-->") {
+  restore.point("init.markdown.form")
+
+  if (!is.null(form$file)) {
+    text = readLines(form$file, warn=FALSE)
+    rows = NULL
+    if (!is.null(start.token)) {
+      rows = which(text==start.token)
+    }
+    if (length(rows)>0) {
+      form$md_source = text[(rows[1]+1):length(text)]
+    } else {
+      form$md_source = text
+    }
+    form$text = text
+  }
+  if (!is.null(form$text)) {
+    form = inject.front.matter.form(form=form)
+  }
+
+  form
+
+}
+
+inject.front.matter.form = function(form, text=form[["text"]]) {
+  restore.point("inject.fron.matter.form")
+
+  fm.form = get.front.matter.form(form,text = text)
+  fields = setdiff(names(fm.form),names(form))
+  form[fields] = fm.form[fields]
+  form
+}
+
+
+get.front.matter.form = function(file, text = readLines(file, warn = FALSE)) {
+ fm = parse_yaml_front_matter(text)
+ fm$form
+}
+
+
 
 parse_yaml_front_matter <- function(input_lines) {
   partitions <- partition_yaml_front_matter(input_lines)
