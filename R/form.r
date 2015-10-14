@@ -1,34 +1,42 @@
 .APP.FORMS.GLOB = new.env()
 
 examples.appForm = function() {
-
   yaml="
 fields:
   user:
     type: character
-    required: TRUE
+    failure_msg: 'Bitte wählen Sie einen Nutzernamen.'
   alpha_1:
     type: numeric
     min: 0
     max: 1
     na_value: '-'
-    required: TRUE
+    failure_msg: 'Bitte wählen Sie einen Anteil zwischen 0 und 1. Setzen Sie einen Dezimalpunkt . statt Dezimalkomma. Tippen Sie - um keinen Vertrag anzubieten.'
   alpha_2:
     type: numeric
     min: 0
     max: 1
     na_value: '-'
-    required: TRUE
+    failure_msg: 'Bitte wählen Sie einen Anteil zwischen 0 und 1. Setzen Sie einen Dezimalpunkt . statt Dezimalkomma.  Tippen Sie - um keinen Vertrag anzubieten.'
 opts:
   name_as_label: TRUE
 "
-  restore.point.options(display.restore.point = TRUE)
+  yaml = enc2utf8(yaml)
 
+  restore.point.options(display.restore.point = TRUE)
   app = eventsApp()
 
-  form = read.yaml(text=yaml)
+
+  form = read.yaml(text=yaml,utf8 = TRUE)
+  form$success.handler = function(...) {
+    cat("\nGreat you inserted valid numbers!")
+  }
   setForm(form)
   ui = simpleFormUI(form)
+
+  file = "D:/libraries/investgame/investgame/game1_input.rmd"
+  ui = markdownFormUI(file=file, knit=TRUE)
+
   addFormHandlers(form)
   app$ui = fluidPage(ui)
   runEventsApp(app, launch.browser = rstudio::viewer)
@@ -51,14 +59,21 @@ getForm = function(app=getApp()) {
   }
 }
 
-addFormHandlers = function(form) {
+formSubmitButton = function(label="Ok", form=getForm()) {
+  restore.point("formSubmitButton")
+
   id = paste0(form$prefix,"submitBtn",form$postfix)
-  buttonHandler(id,formSubmitClick, form=form)
+  actionButton(id, label)
+}
+
+addFormHandlers = function(form, success.handler=form$success.handler) {
+  id = paste0(form$prefix,"submitBtn",form$postfix)
+  buttonHandler(id,formSubmitClick, form=form, success.handler=success.handler)
 }
 
 simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="Submit") {
   li = lapply(names(fields), function(name) {
-    fieldInput(name=name,form=form)
+    HTML(fieldInput(name=name,form=form))
   })
 
   if (is.null(submitBtn)) {
@@ -68,15 +83,102 @@ simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="S
   c(li, list(submitBtn))
 }
 
-formSubmitClick = function(form, success.fun = NULL,...) {
-  restore.point("formSubmitClick")
+viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer,...) {
+  app = eventsApp()
+  ui = markdownFormUI(file=file, form=form, params=params, knit=knit,...)
+  form = getForm()
+  addFormHandlers(form,function(...) cat("\nGreat, all values are ok!"))
 
-  values = getFormValues(form=form)
-  restore.point("formSubmitClick_2")
-  check = checkFormValues(values, form)
+  app$ui = fluidPage(ui)
+  runEventsApp(app, launch.browser=launch.browser)
 }
 
-getFormValues = function(form=getForm(),fields=form$fields,field.names=names(fields), prefix=form$prefix, postfix=form$postfix) {
+
+markdownFormUI = function(file=NULL, text=NULL, parse.form=TRUE, form=NULL, params = NULL, set.UTF8=TRUE, whiskers=!is.null(params), knit=FALSE, parent.env = parent.frame(), fragment.only=FALSE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE) {
+  restore.point("markdownFormUI")
+
+  if (!is.null(file)) {
+    text = readLines(file,warn = FALSE)
+  }
+  if (set.UTF8)
+    Encoding(text)<-"UTF-8"
+
+  if (parse.form & is.null(form)) {
+    fm = parse_yaml_front_matter(text)
+    form = fm$form
+  }
+
+
+  if (!is.null(start.token)) {
+    rows = which(text==start.token)
+    if (length(rows)>0) {
+      text = text[(rows[1]+1):length(text)]
+    }
+  }
+
+  if (select.blocks & !is.null(params)) {
+    text = sep.lines(text)
+    text = select.markdown.blocks(text, params)
+  }
+  if (whiskers & !is.null(params)) {
+    text = paste0(text, collapse="\n")
+    text = replace.whiskers(text,params)
+  }
+  if (knit) {
+    if (!is.null(form))
+      setForm(form)
+    if (!is.null(params)) {
+      env = as.environment(params)
+      parent.env(env)<-parent.env
+    } else {
+      env = parent.env
+    }
+    if (ret.val == "md") {
+      return(knit(text=text,quiet=TRUE,envir=env))
+    }
+
+    html = knitr::knit2html(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
+    html = gsub("&lt;!&ndash;html_preserve&ndash;&gt;","",html, fixed=TRUE)
+    html = gsub("&lt;!&ndash;/html_preserve&ndash;&gt;","",html, fixed=TRUE)
+    #html =gsub("\\\\","\\\\\\\\",html, fixed=TRUE)
+
+  } else {
+    if (ret.val == "md") {
+      return(text)
+    }
+    # Neccessary to make mathjax work
+    #text =gsub("\\\\","\\\\\\\\",text, fixed=TRUE)
+    html = markdownToHTML(text=text, fragment.only=fragment.only)
+  }
+  #rmarkdown::render(text=text)
+  HTML(html)
+
+}
+
+md2html = function(text,mode="rmarkdown",...) {
+  restore.point("md2html")
+
+  if (mode=="rmarkdown") {
+    dir = tempdir()
+    md.file = tempfile("md",tmpdir = dir,fileext = ".md")
+    writeLines(text,md.file)
+    html.file = tempfile("html",tmpdir = dir,fileext = ".html")
+    ret = rmarkdown::render(input=md.file, output_file=html.file,quiet = TRUE)
+    html = readLines(html.file,warn = FALSE)
+  }
+}
+
+formSubmitClick = function(form, success.handler = NULL,...) {
+  restore.point("formSubmitClick")
+
+  res = getFormValues(form=form)
+  restore.point("formSubmitClick_2")
+  if (res$ok & (!is.null(success.handler))) {
+    success.handler(values=res$values, form=form)
+  }
+}
+
+getFormValues = function(form=getForm(),fields=form$fields,field.names=names(fields), prefix=form$prefix, postfix=form$postfix, show.alerts=TRUE) {
   restore.point("getFormValues")
 
   values = lapply(field.names, function(name) {
@@ -84,10 +186,12 @@ getFormValues = function(form=getForm(),fields=form$fields,field.names=names(fie
     getInputValue(name)
   })
   names(values) = field.names
-  values
+  check = checkFormValues(values, form=form, show.alerts=TRUE)
+
+  return(check)
 }
 
-checkFormValues = function(values, form, fields=form$fields[field.names], field.names=names(values), show.alerts = TRUE) {
+checkFormValues = function(values, form, fields=form$fields[field.names], field.names=names(values), show.alerts = TRUE, get.failure.msg = FALSE) {
   restore.point("checkFormValues")
 
   li = lapply(field.names, function(name) {
@@ -99,7 +203,15 @@ checkFormValues = function(values, form, fields=form$fields[field.names], field.
     }
     ret
   })
-  do.call("rbind",li)
+  names(li)= field.names
+  values = sapply(li, function(el) el$value)
+  failed.fields = field.names[sapply(li, function(el) !el$ok)]
+  ok = length(failed.fields) == 0
+  if (get.failure.msg) {
+    failure.msg = sapply(li[failed.fields], function(el) el$msg)
+    return(list(ok=ok,values=values,failed.fields=failed.fields, failure.msg=failure.msg))
+  }
+  return(list(ok=ok,values=values,failed.fields=failed.fields))
 }
 
 clearFieldAlert = function(name=field$name,field, form) {
@@ -118,10 +230,11 @@ showFieldAlert = function(name=field$name, msg="",field, prefix=form$prefix, pos
 checkFieldValue = function(value, field) {
   restore.point("checkFieldValue")
 
+
   if (isTRUE(field$type=="numeric")) {
     num = as.numeric(value)
     if (is.na(num)) {
-      if (value %in% field$na_value) {
+      if (value %in% field$na_value | isTRUE(field$optional)) {
         return(list(ok=TRUE,msg="", value=num))
       }
       msg = fieldFailureMsg(field, value)
@@ -142,7 +255,10 @@ checkFieldValue = function(value, field) {
     }
     return(list(ok=TRUE,msg="", value=num))
   }
-
+  if (nchar(value)==0 & !isTRUE(field$optional)) {
+    msg = fieldFailureMsg(field, value)
+    return(list(ok=FALSE,msg=msg, value=value))
+  }
   return(list(ok=TRUE,msg="", value=value))
 }
 
@@ -194,5 +310,8 @@ fieldInput = function(name=field$name, label=field$label, value=field$value, typ
     ret = paste0(ret,"\n", alert)
   }
 
+
+  ret = paste0(ret,"\n\n")
+  return(ret)
   return(HTML(ret))
 }

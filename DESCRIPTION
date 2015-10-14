@@ -8,4 +8,4 @@ Description: Tools to create and arrange input forms for shiny apps.
              Specify variable fields in yaml format. Create database interface. Parse forms from markdown input.
 License: GPL >= 2.0
 LazyData: TRUE
-Depends: markdown, shinyEvents, YamlObjects, whisker
+Depends: markdown, shinyEvents, YamlObjects, whisker, stringtools, rmarkdown
