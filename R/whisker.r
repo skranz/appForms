@@ -67,7 +67,7 @@ select.markdown.blocks = function(txt, env=parent.frame()) {
   }
 }
 
-replace.whiskers <- function(str, env=parent.frame()) {
+replace.whiskers <- function(str, env=parent.frame(), digits=5) {
   restore.point("replace.whiskers")
 
   pos = str.blocks.pos(str,"{{","}}")
@@ -76,6 +76,10 @@ replace.whiskers <- function(str, env=parent.frame()) {
   vals = lapply(s, function(su) {
     res = try(eval(parse(text=su),env))
     if (is(res,"try-error")) res = "`Error`"
+    if (is.numeric(res) & !is.null(digits)) {
+      digits = max(digits,ceiling(log(res+1,10)))
+      res = signif(res, digits)
+    }
     res
   })
   res = str.replace.at.pos(str, pos$outer, unlist(vals))
