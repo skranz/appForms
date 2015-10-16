@@ -71,7 +71,31 @@ addFormHandlers = function(form, success.handler=form$success.handler) {
   buttonHandler(id,formSubmitClick, form=form, success.handler=success.handler)
 }
 
-simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="Submit") {
+formUI = function(form, add_handlers=FALSE,  success_fun=form$success_fun,...) {
+  restore.point("formUI")
+
+  ui = NULL
+  if (!is.null(form[["ui_fun"]])) {
+    ui = do.call(form[["ui_fun"]],list(form=form,...))
+  } else if (!is.null(form$md_source)) {
+    ui = markdownFormUI(form=form,...)
+  } else if (!is.null(form$file)) {
+    ext = tolower(tools::file_ext(x = form$file))
+    if (ext=="rmd" | ext=="md") {
+      ui = markdownFormUI(form=form,...)
+    } else {
+      stop(paste0("Form generation for file type .",ext," not yet implemented."))
+    }
+  } else {
+    ui = simpleFormUI(form=form,...)
+  }
+  if (add_handlers) {
+    addFormHandlers(form=form, success_fun=success_fun,...)
+  }
+  ui
+}
+
+simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="Submit",...) {
   li = lapply(names(fields), function(name) {
     HTML(fieldInput(name=name,form=form))
   })
@@ -83,17 +107,7 @@ simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="S
   c(li, list(submitBtn))
 }
 
-viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer,...) {
-  app = eventsApp()
-  ui = markdownFormUI(file=file, form=form, params=params, knit=knit,...)
-  form = getForm()
-  addFormHandlers(form,function(...) cat("\nGreat, all values are ok!"))
-
-  app$ui = fluidPage(ui)
-  runEventsApp(app, launch.browser=launch.browser)
-}
-
-markdownFormUI = function(file=form[["file"]], text=form$md_text, parse.form=TRUE, form=NULL, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE) {
+markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, parse.form=TRUE, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE,...) {
   restore.point("markdownFormUI")
 
   if (!is.null(file) & is.null(text)) {
@@ -157,6 +171,18 @@ markdownFormUI = function(file=form[["file"]], text=form$md_text, parse.form=TRU
   HTML(html)
 
 }
+
+
+viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer,...) {
+  app = eventsApp()
+  ui = markdownFormUI(file=file, form=form, params=params, knit=knit,...)
+  form = getForm()
+  addFormHandlers(form,function(...) cat("\nGreat, all values are ok!"))
+
+  app$ui = fluidPage(ui)
+  runEventsApp(app, launch.browser=launch.browser)
+}
+
 
 md2html = function(text,mode="rmarkdown",...) {
   restore.point("md2html")

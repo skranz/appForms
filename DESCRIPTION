@@ -9,4 +9,4 @@ Description: Tools to create and arrange input forms for shiny apps.
 License: GPL >= 2.0
 LazyData: TRUE
 Depends: markdown, shinyEvents, YamlObjects, whisker,
-         stringtools, rmarkdown, jsonlite
+         stringtools, rmarkdown, jsonlite, shinyBS, hwriter
