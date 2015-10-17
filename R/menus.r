@@ -12,6 +12,7 @@ nextFormButton = function(forms,show.fun, current.form, next.form=NULL, prefix="
     next.form = current.form+1
   }
   form = forms[[next.form]]
+  if (is.false(form$fromNextButton)) return(NULL)
 
   name = names(forms)[next.form]
   if (is.null(id)) {

@@ -70,9 +70,19 @@ store.rank =function(store, field, value=store$li[[ind]][[field]], ind=length(st
 
 }
 
-allResultsUI = function(stores, tab.titles=NULL, titles=NULL,names=paste0("resultsTable__",seq_along(stores)),user_col=NULL, value_col=NULL,...) {
-  restore.point("allResultsUI")
+showAllResults = function(stores, container, tab.titles=NULL, titles=NULL,names=paste0("resultsTable__",seq_along(stores)),user_col=NULL, value_col=NULL, password=NULL, entered.password = isTRUE(app$allResultsEnteredPassword), app=getApp(),prefix="allResultsForm__",password.text="The results of all users can only be shown with the lecturer password",...) {
+  restore.point("showAllResults")
 
+
+  if (!is.null(password) & !entered.password) {
+    login.fun = function(..., app=getApp()) {
+      app$allResultsEnteredPassword = TRUE
+      showAllResults(stores=stores, container=container, tab.titles=tab.titles,  titles=titles,names=names,user_col=user_col, value_col=value_col, password=password, entered.password=TRUE, prefix=prefix)
+    }
+    ui = passwordLogin(id = prefix,login.fun = login.fun,text=password.text,password=password)
+    setUI(container, ui)
+    return()
+  }
 
   uis = lapply(seq_along(stores), function(i) {
     allResultsTableUI(store=stores[[i]], title=titles[[i]], name=names[i],user_col=user_col, value_col = value_col,...)
@@ -86,7 +96,7 @@ allResultsUI = function(stores, tab.titles=NULL, titles=NULL,names=paste0("resul
   } else {
     ui = uis[[1]]
   }
-  ui
+  setUI(container,ui)
 }
 
 
@@ -98,9 +108,9 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
 
   if (!is.null(user_col)) {
     if (!is.null(value_col)) {
-      modes = c("all","first","last","best")
+      modes = c("last","first","best","all")
     } else {
-      modes = c("all","first","last")
+      modes = c("last","first","all")
     }
   } else {
     modes = "all"
@@ -117,10 +127,13 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
   ui = list(
     h2(title),
     btns,
-    uiOutput(dtid)
-    #dataTableOutput(dtid)
+    #uiOutput(dtid)
+    dataTableOutput(dtid)
   )
+
   update.table = function(mode,...) {
+    restore.point("update.table")
+    cat("\nupdate.table.....................................\n")
     if (mode == "all") {
       df = data
     } else if (mode=="first") {
@@ -143,8 +156,12 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
       sign = if (greater_better) -1 else 1
       df = df[order(sign*df[[value_col]]),]
     }
-    setUI(dtid, HTML(html.table(df)))
-    #setDataTable(dtid, df, options=opts)
+
+    if (NROW(df)>0) {
+      #df = cbind(data.frame(pos=1:NROW(df)),df)
+    }
+    #setUI(dtid, HTML(html.table(df)))
+    setDataTable(dtid, df, options=opts)
   }
 
   # Add button handlers
