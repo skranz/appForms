@@ -53,7 +53,7 @@ select.markdown.blocks = function(txt, env=parent.frame()) {
   #cbind(start_row, end_row)
   str_calls = str.right.of(txt[start],"#< ")
   calls = lapply(str_calls, function(str) parse(text=str))
-  add = sapply(calls, function(call) isTRUE(eval(call,envir=env)))
+  add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
 
   del.rows = unique(unlist(lapply(which(!add),function(ind){
     start_row[ind]:end_row[ind]
@@ -67,9 +67,12 @@ select.markdown.blocks = function(txt, env=parent.frame()) {
   }
 }
 
-replace.whiskers <- function(str, env=parent.frame(), digits=5) {
+replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE) {
   restore.point("replace.whiskers")
 
+  if (add.params) {
+    env$params = as.list(env)
+  }
   pos = str.blocks.pos(str,"{{","}}")
   if (NROW(pos$outer)==0) return(str)
   s = substring(str, pos$inner[,1],pos$inner[,2])

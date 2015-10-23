@@ -173,13 +173,16 @@ markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, pa
 }
 
 
-viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer,...) {
+viewMarkdownForm = function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer, ui = NULL,...) {
   app = eventsApp()
-  ui = markdownFormUI(file=file, form=form, params=params, knit=knit,...)
-  form = getForm()
-  addFormHandlers(form,function(...) cat("\nGreat, all values are ok!"))
-
-  app$ui = fluidPage(ui)
+  if (is.null(ui)) {
+    ui = markdownFormUI(file=file, form=form, params=params, knit=knit,...)
+    form = getForm()
+  }
+  if (!is.null(form)) {
+    addFormHandlers(form,function(...) cat("\nGreat, all values are ok!"))
+  }
+  app$ui = fluidPage(with_mathjax(ui))
   runEventsApp(app, launch.browser=launch.browser)
 }
 
