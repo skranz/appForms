@@ -36,13 +36,15 @@ scenApp = function(file=file,dir=getwd(),sca=NULL, values=list()) {
 
 
 
-init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list()) {
+init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list(), userid="guest", nickname=userid) {
   restore.point("init.sca")
 
   sca = read.yaml(file=file)
   sca = as.environment(sca)
   sca.init.params(sca=sca)
 
+  sca$userid   = userid
+  sca$nickname = nickname
   sca$values = values
   sca$values = copy.into.missing.fields(sca$values,sca$params)
   sca$container.id = container.id
@@ -171,6 +173,7 @@ sca.run.scen = function(scen.name, sca, scen=sca$scens[[scen.name]], global.para
   ret = copy.into.missing.fields(ret,global.params)
 
   vals = ret[!sapply(ret, is.function)]
+  vals = c(list(userid=sca$userid, nickname=sca$nickname),vals)
 
   store$add(vals)
   sca$scenvals[[scen.name]] = vals
@@ -227,17 +230,18 @@ sca.all.results.btn = function(sca,id = "scenariosAllResultsBtn", label="", btn.
 sca.all.results.click = function(sca,...) {
   restore.point("sca.all.results.click")
 
-  back.fun=function(...) {
-    sca.show.form(name = sca$current.form,sca = sca)
-  }
+  scen.titles = sapply(sca$scens, function(scen) scen$scen_title)
 
-  scen.titles = sapply(sca$scens, function(scen) scen$title)
+  back.btn.id = "scaAllResultsBackBtn"
+  back.btn = bsButton(back.btn.id, label="", icon=icon("arrow-left"), size="small")
+  current.form = sca$current.form
+  buttonHandler(back.btn.id, function(...) {
+    sca.show.form(name = current.form,sca = sca)
+  })
 
-  menu = chooseFormButtons(forms=sca$forms, show.fun = sca.show.form, current.form=sca$current.form)
+  setUI(sca$container.id, with_mathjax(list(h2(paste0("Submissions ",sca$title)), back.btn,uiOutput("scenariosAllResultsUI"))))
 
-  setUI(sca$container.id, with_mathjax(list(h2(sca$title), menu,hr(),uiOutput("scenariosAllResultsUI"))))
-
-  showAllResults(sca$stores, tab.titles=scen.titles, user_col="user", value_col="EU", entered.password = FALSE, password="diamond",container="scenariosAllResultsUI")
+  showAllResults(sca$stores, tab.titles=scen.titles, user_col="nickname", value_col=sca$scens[[1]]$value_col, entered.password = !FALSE, password="diamond",container="scenariosAllResultsUI")
 
 }
 
