@@ -1,3 +1,19 @@
+findNextActiveForm = function(forms, current.form) {
+  restore.point("findNextActiveForm")
+
+
+  if (is.character(current.form)) {
+    current.form = which(names(forms)==current.form)
+  }
+  if (current.form >= length(forms)) return(NULL)
+
+  for (ind in (current.form+1:length(forms))) {
+    if (!is.false(forms[[ind]]$active))
+      return(names(forms)[ind])
+  }
+  return(NULL)
+}
+
 
 nextFormButton = function(forms,show.fun, current.form, next.form=NULL, prefix="", postfix="", add.handler=TRUE, size="small", style="default", label="Next",id=NULL,...) {
   restore.point("nextFormButton")

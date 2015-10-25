@@ -43,6 +43,38 @@ opts:
 
 }
 
+init.form = function(form) {
+  restore.point("init.form")
+
+  if (is.null(form$type))
+    form$type = infer.form.type(form)
+
+  if (form$type=="markdown") {
+    form = init.markdown.form(form = form)
+  } else if (form$type=="side_by_side") {
+    form = init.side.by.side.form(form = form)
+  }
+
+  form
+}
+
+infer.form.type = function(form) {
+  restore.point("infer.form.type")
+
+  if (!is.null(form[["type"]])) form$type
+
+  if (!is.null(form[["forms"]])) "side_by_side"
+
+  if (!is.null(form[["file"]])) {
+    ext = tolower(tools::file_ext(form$file))
+    if (ext == "md" | ext == "rmd") return("markdown")
+  }
+
+  type = "simple"
+  return(type)
+
+}
+
 setForm = function(form, app=getApp()) {
   if (is.null(app)) {
     .APP.FORMS.GLOB[[".ACTIVE.FORM"]] = form
@@ -66,28 +98,24 @@ formSubmitButton = function(label="Ok", form=getForm()) {
   HTML(as.character(actionButton(id, label)))
 }
 
-addFormHandlers = function(form, success.handler=form$success.handler) {
+addFormHandlers = function(form, success.handler=form$success.handler,...) {
+  restore.point("addFormHandlers")
+
+
   id = paste0(form$prefix,"submitBtn",form$postfix)
-  buttonHandler(id,formSubmitClick, form=form, success.handler=success.handler)
+  buttonHandler(id,formSubmitClick, form=form, success.handler=success.handler,...)
 }
 
-formUI = function(form, add_handlers=FALSE,  success_fun=form$success_fun,...) {
+formUI = function(form, params=form$params, add_handlers=FALSE,  success_fun=form$success_fun,...) {
   restore.point("formUI")
 
   ui = NULL
-  if (!is.null(form[["ui_fun"]])) {
-    ui = do.call(form[["ui_fun"]],list(form=form,...))
-  } else if (!is.null(form$md_source)) {
-    ui = markdownFormUI(form=form,...)
-  } else if (!is.null(form$file)) {
-    ext = tolower(tools::file_ext(x = form$file))
-    if (ext=="rmd" | ext=="md") {
-      ui = markdownFormUI(form=form,...)
-    } else {
-      stop(paste0("Form generation for file type .",ext," not yet implemented."))
-    }
+  if (form$type == "markdown") {
+    ui = markdownFormUI(form=form,params=params,...)
+  } else if (form$type == "side_by_side") {
+    ui = sideBySideFormUI(form=form,params=params,...)
   } else {
-    ui = simpleFormUI(form=form,...)
+    ui = simpleFormUI(form=form,params=params,...)
   }
   if (add_handlers) {
     addFormHandlers(form=form, success_fun=success_fun,...)
@@ -200,13 +228,13 @@ md2html = function(text,mode="rmarkdown",...) {
   }
 }
 
-formSubmitClick = function(form, success.handler = NULL,...) {
+formSubmitClick = function(form, success.handler = NULL,app=getApp(),id=NULL,session=NULL,...) {
   restore.point("formSubmitClick")
 
   res = getFormValues(form=form)
   restore.point("formSubmitClick_2")
   if (res$ok & (!is.null(success.handler))) {
-    success.handler(values=res$values, form=form)
+    success.handler(values=res$values, form=form,...)
   }
 }
 

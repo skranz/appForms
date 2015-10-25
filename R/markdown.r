@@ -25,7 +25,9 @@ init.markdown.form = function(form, start.token = "# <--START-->") {
 inject.front.matter.form = function(form, text=form[["text"]]) {
   restore.point("inject.fron.matter.form")
 
-  fm.form = get.front.matter.form(form,text = text)
+  fm.form = try(get.front.matter.form(form,text = text))
+  if (is(fm.form,"try-error")) return(form)
+
   fields = setdiff(names(fm.form),names(form))
   form[fields] = fm.form[fields]
   form
