@@ -1,15 +1,23 @@
-printFormsUI = function(forms,params, only.active=TRUE, add.form.title=TRUE,main=NULL, back.fun = NULL, prefix="", postfix="", btn.size="small", current.form=NULL, just.current=TRUE, container.id=NULL,...) {
+printFormsUI = function(forms,forms.params, only.active=TRUE, add.form.title=TRUE,main=NULL, back.fun = NULL, prefix="", postfix="", btn.size="small", current.form=NULL, just.current=TRUE, container.id=NULL,...) {
   restore.point("printFormsUI")
 
+
   if (!is.null(current.form) & just.current) {
-    cur.forms = forms[current.form]
+    if (is.character(current.form)) {
+      forms.inds = which(names(forms)==current.form)
+    } else {
+      forms.inds = current.form
+    }
   } else if (only.active) {
-    cur.forms = forms[sapply(forms, function(form) form$active)]
+    forms.inds = which(sapply(forms, function(form) form$active))
   } else {
-    cur.forms = forms
+    form.inds = seq_along(forms)
   }
 
-  ui.li = lapply(cur.forms, formUI, params=params,...)
+  ui.li = lapply(forms.inds, function(i) {
+    formUI(forms[[i]], params=forms.params[[i]])
+  })
+
 
   txt = sapply(seq_along(ui.li), function(i) {
     paste0(
@@ -43,7 +51,7 @@ printFormsUI = function(forms,params, only.active=TRUE, add.form.title=TRUE,main
     show.print = function(just.current=FALSE,...) {
       restore.point("show.print")
 
-      ui = printFormsUI(forms,params, only.active, add.form.title,main, back.fun, prefix, postfix, btn.size, current.form, just.current, container.id,...)
+      ui = printFormsUI(forms,forms.params=forms.params, only.active, add.form.title,main, back.fun, prefix, postfix, btn.size, current.form, just.current, container.id,...)
       setUI(container.id, ui)
     }
 

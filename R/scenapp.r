@@ -75,6 +75,7 @@ init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="
 
   sca$inpvals = list()
 
+  sca.set.forms.activeness(sca)
 
   sca
 }
@@ -102,15 +103,9 @@ sca.show.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
   lower.menu = chooseFormButtons(forms=forms, show.fun = sca.show.form, current.form=name, postfix="_lower")
   next.btn = nextFormButton(forms=forms, show.fun = sca.show.form, current.form=name, label=sca$next.btn.label)
 
-  if (is.null(form$params))
-    form$params = list()
+  params = sca.form.params(form, sca)
 
-  if (!is.null(form[["scen"]])) {
-    form$params = copy.into.missing.fields(sca$scenvals[[form$scen]], form$params)
-  }
-  form$params = copy.into.missing.fields(form$params,sca$values)
-
-  ui = formUI(form=form, params=form$params, scen.params=sca$scenvals)
+  ui = formUI(form=form, params=params, scen.params=sca$scenvals)
 
   extra.btns = list(
     sca.print.button(sca=sca),
@@ -129,15 +124,8 @@ sca.show.input.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
 
   menu = chooseFormButtons(forms=forms, show.fun = sca.show.form, current.form=name)
 
-
-  form$params = copy.into.missing.fields(sca$values, form$params)
-  if (!is.null(form[["scen"]])) {
-    form$params = copy.into.missing.fields(sca$scenvals[[form$scen]], form$params)
-  }
-
-
-
-  ui = formUI(form=form, scen.params=sca$scenvals)
+  params = sca.form.params(form, sca)
+  ui = formUI(form=form, params=params, scen.params=sca$scenvals)
 
   addFormHandlers(form=form,success.handler = sca.input.submit,form.name=name, sca=sca)
 
@@ -164,7 +152,12 @@ sca.input.submit = function(values,form,sca=app$sca,form.name, app=getApp(),...)
       sca.run.scen(scen.name=scen.name, sca=sca)
   }
 
+  sca.set.forms.activeness(sca)
+
+
   next.form = findNextActiveForm(forms=sca$forms, current.form = form.name)
+
+
 
   if (!is.null(next.form))
     sca.show.form(name = next.form)
@@ -222,7 +215,10 @@ sca.print.button = function(sca,id = "scenariosPrintBtn", label="", btn.icon=ico
   btn = bsButton(id,label, size=size, icon=btn.icon,...)
 
   buttonHandler(id, function(...) {
-    ui = printFormsUI(forms=sca$forms, params=sca$values, scen.params=sca$scenvals, current.form = sca$current.form, just.current=TRUE, back.fun=back.fun, container.id=sca$container.id)
+    restore.point("sca.print.click")
+    forms.params = lapply(sca$forms, sca.form.params, sca=sca)
+
+    ui = printFormsUI(forms=sca$forms, forms.params=forms.params, scen.params=sca$scenvals, current.form = sca$current.form, just.current=TRUE, back.fun=back.fun, container.id=sca$container.id)
     setUI(sca$container.id, ui)
   })
   btn
@@ -265,6 +261,33 @@ sca.show.user.form = function(sca, current.form=1) {
   ui = simpleUserNameUI(title=NULL,lang=sca$lang,submit.handler = submit.fun, sca=sca)
 
   setUI(sca$container.id, list(h2(sca$title),ui))
+}
 
+sca.form.params = function(form,sca) {
+  restore.point("sca.form.params")
+
+  params = form$params
+  if (is.null(params)) params = list()
+
+  if (!is.null(form[["scen"]])) {
+    params = copy.into.missing.fields(sca$scenvals[[form$scen]], form$params)
+  } else {
+    params = form$params
+  }
+  params = copy.into.missing.fields(params,sca$values)
+  params
+}
+
+sca.set.forms.activeness = function(sca) {
+  restore.point("sca.set.forms.activeness")
+
+  for (ind in seq_along(sca$forms)) {
+    form = sca$forms[[ind]]
+    if (!is.null(form[["scen"]])) {
+      sca$forms[[ind]]$active = length(sca$scenvals[[form$scen]])>0
+    } else {
+      sca$forms[[ind]]$active = TRUE
+    }
+  }
 
 }
