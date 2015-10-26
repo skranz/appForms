@@ -47,6 +47,7 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
 
   restore.point("allResultsTableUI")
 
+  data = as_data_frame(data)
   dtid = paste0(name,"__Table")
 
   if (!is.null(user_col)) {
@@ -100,7 +101,10 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
       df = df[order(sign*df[[value_col]]),]
     }
 
+    df = dplyr::select(df, -userid)
     if (NROW(df)>0) {
+
+
       #df = cbind(data.frame(pos=1:NROW(df)),df)
     }
     #setUI(dtid, HTML(html.table(df)))

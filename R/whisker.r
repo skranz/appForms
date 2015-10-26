@@ -34,7 +34,7 @@ examples.get.whisker.with.type = function() {
   replace.whisker.with.blocks(text, params)
 }
 
-select.markdown.blocks = function(txt, env=parent.frame()) {
+select.markdown.blocks = function(txt, env=parent.frame(), call.list=NULL) {
   restore.point("select.markdown.blocks")
 
   #str = sep.lines(str)
@@ -52,7 +52,12 @@ select.markdown.blocks = function(txt, env=parent.frame()) {
   end_row = end[blocks[,2]]-1
   #cbind(start_row, end_row)
   str_calls = str.right.of(txt[start],"#< ")
-  calls = lapply(str_calls, function(str) parse(text=str))
+
+  if (is.null(call.list)) {
+    calls = lapply(str_calls, function(str) parse(text=str))
+  } else {
+    calls = call.list[str_calls]
+  }
   add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
 
   del.rows = unique(unlist(lapply(which(!add),function(ind){
@@ -67,7 +72,31 @@ select.markdown.blocks = function(txt, env=parent.frame()) {
   }
 }
 
-replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE) {
+markdown.blocks.call.list = function(txt) {
+  restore.point("markdown.blocks.call.list")
+
+  if (length(txt)==1) txt = sep.lines(txt)
+  start = which(str.starts.with(txt,"#<"))
+  end = which(str.starts.with(txt,"#>"))
+
+  if (length(start) != length(end)) {
+    stop(paste0("You open ", length(start), " blocks but close ", length(end), " blocks"))
+  }
+
+  if (length(start)==0) return(txt)
+
+  blocks = match.blocks.start.end(start, end)
+  start_row = start+1
+  end_row = end[blocks[,2]]-1
+  #cbind(start_row, end_row)
+  str_calls = str.right.of(txt[start],"#< ")
+  str_calls = unique(str_calls)
+  call.list = lapply(str_calls, function(str) parse(text=str))
+  call.list
+
+}
+
+replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE, whiskers.call.list=NULL) {
   restore.point("replace.whiskers")
 
   if (add.params) {
@@ -76,17 +105,47 @@ replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE)
   pos = str.blocks.pos(str,"{{","}}")
   if (NROW(pos$outer)==0) return(str)
   s = substring(str, pos$inner[,1],pos$inner[,2])
-  vals = lapply(s, function(su) {
-    res = try(eval(parse(text=su),env))
-    if (is(res,"try-error")) res = "`Error`"
-    if (is.numeric(res) & !is.null(digits)) {
-      digits = max(digits,ceiling(log(res+1,10)))
-      res = signif(res, digits)
-    }
-    res
-  })
+
+  if (is.null(whiskers.call.list)) {
+    vals = lapply(s, function(su) {
+      res = try(eval(parse(text=su),env))
+      if (is(res,"try-error")) res = "`Error`"
+      if (is.numeric(res) & !is.null(digits)) {
+        digits = max(digits,ceiling(log(res+1,10)))
+        res = signif(res, digits)
+      }
+      res
+    })
+  # speed up compilation
+  } else {
+    calls = whiskers.call.list[s]
+    vals = lapply(calls, function(call) {
+      res = try(eval(call,env))
+      if (is(res,"try-error")) res = "`Error`"
+      if (is.numeric(res) & !is.null(digits)) {
+        digits = max(digits,ceiling(log(res+1,10)))
+        res = signif(res, digits)
+      }
+      res
+    })
+  }
   res = str.replace.at.pos(str, pos$outer, unlist(vals))
   res
+}
+
+whiskers.call.list = function(str) {
+  restore.point("whiskers.call.list")
+  pos = str.blocks.pos(str,"{{","}}")
+  if (NROW(pos$outer)==0) return(str)
+  s = substring(str, pos$inner[,1],pos$inner[,2])
+
+  s = unique(s)
+  calls = lapply(s, function(txt) {
+    res = parse(text=txt)[[1]]
+    res
+  })
+  names(calls)=s
+  calls
 }
 
 replace.whisker.with.blocks = function(str, env=parent.frame()) {

@@ -18,6 +18,12 @@ init.markdown.form = function(form, start.token = "# <--START-->") {
     form = inject.front.matter.form(form=form)
   }
 
+  if (!is.null(form$md_source)) {
+    txt = paste0(form$md_source,collapse="\n")
+    form$whiskers.call.list = whiskers.call.list(txt)
+    form$markdown.blocks.call.list = markdown.blocks.call.list(form$md_source)
+  }
+
   form
 
 }

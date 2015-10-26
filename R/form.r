@@ -106,14 +106,14 @@ addFormHandlers = function(form, success.handler=form$success.handler,...) {
   buttonHandler(id,formSubmitClick, form=form, success.handler=success.handler,...)
 }
 
-formUI = function(form, params=form$params, add_handlers=FALSE,  success_fun=form$success_fun,...) {
+formUI = function(form, params=form$params, add_handlers=FALSE,  success_fun=form$success_fun,scen.params=NULL, ...) {
   restore.point("formUI")
 
   ui = NULL
   if (form$type == "markdown") {
     ui = markdownFormUI(form=form,params=params,...)
   } else if (form$type == "side_by_side") {
-    ui = sideBySideFormUI(form=form,params=params,...)
+    ui = sideBySideFormUI(form=form,params=params,scen.params=scen.params,...)
   } else {
     ui = simpleFormUI(form=form,params=params,...)
   }
@@ -135,7 +135,7 @@ simpleFormUI = function(form, fields=form$fields, submitBtn=NULL, submitLabel="S
   c(li, list(submitBtn))
 }
 
-markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, parse.form=TRUE, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE,...) {
+markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, parse.form=TRUE, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE,whiskers.call.list=form$whiskers.call.list,markdown.blocks.call.list = form$markdown.blocks.call.list, ...) {
   restore.point("markdownFormUI")
 
   if (!is.null(file) & is.null(text)) {
@@ -161,13 +161,13 @@ markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, pa
 
   if (select.blocks & !is.null(params)) {
     text = sep.lines(text)
-    text = select.markdown.blocks(text, params)
+    text = select.markdown.blocks(text, params, call.list = markdown.blocks.call.list)
   }
   if (whiskers) {
     params$form = form
     setForm(form)
     text = paste0(text, collapse="\n")
-    text = replace.whiskers(text,params)
+    text = replace.whiskers(text,params, whiskers.call.list=whiskers.call.list)
   }
   if (knit) {
     if (!is.null(form))

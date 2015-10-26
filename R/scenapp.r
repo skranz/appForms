@@ -12,11 +12,11 @@ examples.scenapp = function() {
 
 }
 
-scenApp = function(file=file,dir=getwd(),sca=NULL, values=list()) {
+scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="simple", userid=NULL, nickname=userid) {
   restore.point("scenApp")
 
   if (is.null(sca))
-    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values)
+    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values, user_choice=user_choice, userid=userid, nickname=nickname)
 
 
   app = eventsApp()
@@ -28,7 +28,12 @@ scenApp = function(file=file,dir=getwd(),sca=NULL, values=list()) {
 
   app$initHandler = function(app,...) {
     app$sca = as.environment(as.list(app$sca))
-    sca.show.form(1)
+
+    if (!is.null(userid)) {
+      sca.show.form(1)
+    } else {
+      sca.show.user.form(sca=app$sca)
+    }
   }
 
   app
@@ -36,13 +41,14 @@ scenApp = function(file=file,dir=getwd(),sca=NULL, values=list()) {
 
 
 
-init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list(), userid="guest", nickname=userid) {
+init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list(), user_choice="simple", userid=NULL, nickname=userid) {
   restore.point("init.sca")
 
   sca = read.yaml(file=file)
   sca = as.environment(sca)
   sca.init.params(sca=sca)
 
+  sca$user_choice = user_choice
   sca$userid   = userid
   sca$nickname = nickname
   sca$values = values
@@ -173,7 +179,7 @@ sca.run.scen = function(scen.name, sca, scen=sca$scens[[scen.name]], global.para
   ret = copy.into.missing.fields(ret,global.params)
 
   vals = ret[!sapply(ret, is.function)]
-  vals = c(list(userid=sca$userid, nickname=sca$nickname),vals)
+  vals = c(list(userid=sca$userid, nickname=sca$nickname, scen_name=scen.name, scen_title=scen$scen_title),vals)
 
   store$add(vals)
   sca$scenvals[[scen.name]] = vals
@@ -245,3 +251,18 @@ sca.all.results.click = function(sca,...) {
 
 }
 
+
+sca.show.user.form = function(sca, current.form=1) {
+
+  submit.fun = function(sca, userid, nickname, ...) {
+    sca$userid = userid
+    sca$nickname = nickname
+    sca.show.form(current.form, sca=sca)
+  }
+
+  ui = simpleUserNameUI(title=NULL,lang=sca$lang,submit.handler = submit.fun, sca=sca)
+
+  setUI(sca$container.id, list(h2(sca$title),ui))
+
+
+}

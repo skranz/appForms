@@ -1,4 +1,4 @@
-examples.columns = function() {
+examples.side.by.side = function() {
   setwd("D:/libraries/investgame/investgame2")
   file="game2_result_inner.rmd"
   text = readLines(file)
@@ -80,8 +80,87 @@ split.into.anchor.blocks = function(text) {
 
 }
 
-formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE, whiskers=TRUE, knit=TRUE, parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", select.blocks=TRUE, toHTML=TRUE, form=NULL,...) {
-  restore.point("markdownFormUI")
+examples.formMarkdownToHTML = function() {
+  text = '
+$\\\\alpha = {{alpha}}$
+
+The number is {{i}}.
+
+#< is_ok
+
+```{ r eval=TRUE}
+x = {{alpha}}
+plot(x)
+```
+
+#>
+
+```
+  Hi my text
+```
+'
+
+
+
+  params = list(alpha=0.01, is_ok=TRUE, i = 10)
+  html = formMarkdownToHTML(text=text,whiskers=FALSE, knit=FALSE)
+  html = paste0(html, collapse="\n")
+
+
+  setwd("D:/libraries/investgame/investgame2")
+  file="game2_result_inner.rmd"
+  text = readLines(file)
+
+  source("invest_game_2.r")
+
+  params = game2(i=0.1,w=1.2)
+
+  text = paste0(text,collapse="\n")
+  call.list = whiskers.call.list(text)
+  microbenchmark::microbenchmark(times = 10,
+    replace.whiskers(text,params, add.params=TRUE, call.list=call.list),
+    replace.whiskers(text,params, add.params=TRUE)
+  )
+
+  replace.whiskers(html,params, add.params=TRUE)
+
+
+  whiskers.call.list = whiskers.call.list(text)
+  markdown.blocks.call.list = markdown.blocks.call.list(text)
+
+
+  Rprof(tmp <- tempfile())
+  for (i in 1:10)
+    html = formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list, markdown.blocks.call.list = markdown.blocks.call.list)
+  Rprof()
+  summaryRprof(tmp)
+
+  Rprof(tmp <- tempfile())
+  for (i in 1:10)
+    html = formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = NULL)
+  Rprof()
+  summaryRprof(tmp)
+
+
+  formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE)
+
+  html = formMarkdownToHTML(text=text,whiskers=FALSE, knit=FALSE)
+  html = paste0(html, collapse="\n")
+
+
+  set.storing(FALSE)
+  microbenchmark::microbenchmark(times = 3,
+    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list, markdown.blocks.call.list = markdown.blocks.call.list),
+    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list),
+    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE)
+  )
+
+
+  html
+}
+
+formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE, whiskers=TRUE, knit=TRUE, parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", select.blocks=TRUE, toHTML=TRUE, form=NULL, whiskers.call.list=form$whiskers.call.list, markdown.blocks.call.list = form$markdown.blocks.call.list,...) {
+  restore.point("formMarkdownToHTML")
 
   if (length(text)==1) text = sep.lines(text)
 
@@ -101,13 +180,13 @@ formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE
 
   if (select.blocks & !is.null(params)) {
     text = sep.lines(text)
-    text = select.markdown.blocks(text, params)
+    text = select.markdown.blocks(text, params,call.list = markdown.blocks.call.list)
   }
   if (whiskers) {
     params$form = form
     setForm(form)
     text = paste0(text, collapse="\n")
-    text = replace.whiskers(text,params, add.params=TRUE)
+    text = replace.whiskers(text,params, add.params=TRUE, whiskers.call.list=whiskers.call.list)
   }
 
   if (!toHTML) return(text)

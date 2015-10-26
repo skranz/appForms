@@ -41,9 +41,9 @@ file.mem.store = function(name, file.name=paste0(name,".yaml"), is.df=TRUE, load
     #writeLines(paste0("- ",json), con = st$append.con)
     if (st$is.df) {
       if (!is.null(st$df)) {
-        st$df = rbind(st$df, as.data.frame(vals))
+        st$df = rbindlist(c(list(st$df), list(as.data.table(vals))))
       } else {
-        st$df = as.data.frame(vals)
+        st$df = as.data.table(vals)
       }
     }
   }
