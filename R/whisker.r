@@ -58,7 +58,10 @@ select.markdown.blocks = function(txt, env=parent.frame(), call.list=NULL) {
   } else {
     calls = call.list[str_calls]
   }
-  add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
+  #add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
+
+  add = sapply(calls, function(call) isTRUE(eval(call,envir=env)))
+
 
   del.rows = unique(unlist(lapply(which(!add),function(ind){
     start_row[ind]:end_row[ind]
@@ -91,7 +94,8 @@ markdown.blocks.call.list = function(txt) {
   #cbind(start_row, end_row)
   str_calls = str.right.of(txt[start],"#< ")
   str_calls = unique(str_calls)
-  call.list = lapply(str_calls, function(str) parse(text=str))
+  call.list = lapply(str_calls, function(str) parse(text=str)[[1]])
+  names(call.list) = str_calls
   call.list
 
 }
