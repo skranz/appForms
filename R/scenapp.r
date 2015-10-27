@@ -12,11 +12,11 @@ examples.scenapp = function() {
 
 }
 
-scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="simple", userid=NULL, nickname=userid) {
+scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="simple", userid=NULL, nickname=userid,...) {
   restore.point("scenApp")
 
   if (is.null(sca))
-    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values, user_choice=user_choice, userid=userid, nickname=nickname)
+    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values, user_choice=user_choice, userid=userid, nickname=nickname,...)
 
 
   app = eventsApp()
@@ -218,7 +218,7 @@ sca.print.button = function(sca,id = "scenariosPrintBtn", label="", btn.icon=ico
     restore.point("sca.print.click")
     forms.params = lapply(sca$forms, sca.form.params, sca=sca)
 
-    ui = printFormsUI(forms=sca$forms, forms.params=forms.params, scen.params=sca$scenvals, current.form = sca$current.form, just.current=TRUE, back.fun=back.fun, container.id=sca$container.id)
+    ui = printFormsUI(forms=sca$forms, forms.params=forms.params, main=sca$title, scen.params=sca$scenvals, current.form = sca$current.form, just.current=TRUE, back.fun=back.fun, container.id=sca$container.id)
     setUI(sca$container.id, ui)
   })
   btn
@@ -283,8 +283,11 @@ sca.set.forms.activeness = function(sca) {
 
   for (ind in seq_along(sca$forms)) {
     form = sca$forms[[ind]]
-    if (!is.null(form[["scen"]])) {
+    if (length(form[["scen"]])==1) {
       sca$forms[[ind]]$active = length(sca$scenvals[[form$scen]])>0
+    } else if (length(form[["scen"]])>1){
+      lens = sapply(sca$scenvals[form$scen], length)
+      sca$forms[[ind]]$active = !any(lens==0)
     } else {
       sca$forms[[ind]]$active = TRUE
     }

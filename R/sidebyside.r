@@ -18,6 +18,9 @@ examples.side.by.side = function() {
 
 init.side.by.side.form = function(form,...) {
   form$forms = lapply(form$forms, init.form)
+  scens = unlist(lapply(form$forms, function(form) form$scen))
+  form$scen = c(form[["scen"]], scens)
+
   form
 }
 
