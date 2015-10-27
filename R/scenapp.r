@@ -12,11 +12,11 @@ examples.scenapp = function() {
 
 }
 
-scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="simple", userid=NULL, nickname=userid,...) {
+scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="simple", userid=NULL, nickname=userid, results.password=NULL,...) {
   restore.point("scenApp")
 
   if (is.null(sca))
-    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values, user_choice=user_choice, userid=userid, nickname=nickname,...)
+    sca = init.sca(file=file, dir=dir, container.id = "mainUI", values=values, user_choice=user_choice, userid=userid, nickname=nickname,results.password=results.password,...)
 
 
   app = eventsApp()
@@ -41,7 +41,7 @@ scenApp = function(file=file,dir=getwd(),sca=NULL, values=list(), user_choice="s
 
 
 
-init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list(), user_choice="simple", userid=NULL, nickname=userid) {
+init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="next", values=list(), user_choice="simple", userid=NULL, nickname=userid, results.password=NULL) {
   restore.point("init.sca")
 
   sca = read.yaml(file=file)
@@ -56,6 +56,7 @@ init.sca = function(file, dir=getwd(), container.id = "mainUI", next.btn.label="
   sca$container.id = container.id
   sca$forms = lapply(sca$forms, init.form)
 
+  sca$results.password = results.password
 
   sca$next.btn.label = next.btn.label
 
@@ -245,7 +246,7 @@ sca.all.results.click = function(sca,...) {
 
   setUI(sca$container.id, with_mathjax(list(h2(paste0("Submissions ",sca$title)), back.btn,uiOutput("scenariosAllResultsUI"))))
 
-  showAllResults(sca$stores, tab.titles=scen.titles, user_col="nickname", value_col=sca$scens[[1]]$value_col, entered.password = !FALSE, password="diamond",container="scenariosAllResultsUI")
+  showAllResults(sca$stores, tab.titles=scen.titles, user_col="nickname", value_col=sca$scens[[1]]$value_col, password=sca$results.password,container="scenariosAllResultsUI", ignore.cols=c("userid","scen_name","scen_title"))
 
 }
 

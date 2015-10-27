@@ -13,14 +13,14 @@ store.rank =function(store, field, value=store$li[[ind]][[field]], ind=length(st
 
 }
 
-showAllResults = function(stores, container, tab.titles=NULL, titles=NULL,names=paste0("resultsTable__",seq_along(stores)),user_col=NULL, value_col=NULL, password=NULL, entered.password = isTRUE(app$allResultsEnteredPassword), app=getApp(),prefix="allResultsForm__",password.text="The results of all users can only be shown with the lecturer password",...) {
+showAllResults = function(stores, container, tab.titles=NULL, titles=NULL,names=paste0("resultsTable__",seq_along(stores)),user_col=NULL, value_col=NULL, password=NULL, entered.password = isTRUE(app$allResultsEnteredPassword), app=getApp(),prefix="allResultsForm__",password.text="The results of all users can only be shown with the lecturer password", ignore.cols=NULL, ...) {
   restore.point("showAllResults")
 
 
   if (!is.null(password) & !entered.password) {
     login.fun = function(..., app=getApp()) {
       app$allResultsEnteredPassword = TRUE
-      showAllResults(stores=stores, container=container, tab.titles=tab.titles,  titles=titles,names=names,user_col=user_col, value_col=value_col, password=password, entered.password=TRUE, prefix=prefix)
+      showAllResults(stores=stores, container=container, tab.titles=tab.titles,  titles=titles,names=names,user_col=user_col, value_col=value_col, password=password, entered.password=TRUE, prefix=prefix, ignore.cols=ignore.cols)
     }
     ui = passwordLogin(id = prefix,login.fun = login.fun,text=password.text,password=password)
     setUI(container, ui)
@@ -28,7 +28,7 @@ showAllResults = function(stores, container, tab.titles=NULL, titles=NULL,names=
   }
 
   uis = lapply(seq_along(stores), function(i) {
-    allResultsTableUI(store=stores[[i]], title=titles[[i]], name=names[i],user_col=user_col, value_col = value_col,...)
+    allResultsTableUI(store=stores[[i]], title=titles[[i]], name=names[i],user_col=user_col, value_col = value_col, ignore.cols=ignore.cols,...)
   })
 
   if (length(uis)>1) {
@@ -43,7 +43,7 @@ showAllResults = function(stores, container, tab.titles=NULL, titles=NULL,names=
 }
 
 
-allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", user_col=NULL, value_col=NULL, greater_better=TRUE, title=NULL,   opts = list(paging=FALSE, lengthMenu=FALSE, pageLength=NROW(data),searching=FALSE, info=FALSE)) {
+allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", user_col=NULL, value_col=NULL, greater_better=TRUE, title=NULL,   opts = list(paging=FALSE, lengthMenu=FALSE, pageLength=NROW(data),searching=FALSE, info=FALSE), ignore.cols=NULL) {
 
   restore.point("allResultsTableUI")
 
@@ -101,7 +101,8 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
       df = df[order(sign*df[[value_col]]),]
     }
 
-    df = dplyr::select(df, -userid)
+    cols = setdiff(colnames(df), ignore.cols)
+    df = df[,cols]
     if (NROW(df)>0) {
 
 
