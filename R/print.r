@@ -21,7 +21,7 @@ printFormsUI = function(forms,forms.params, only.active=TRUE, add.form.title=TRU
 
   txt = sapply(seq_along(ui.li), function(i) {
     paste0(
-      if (add.form.title) h2(forms[[i]]$title) else "",
+      if (add.form.title) h2(forms[[forms.inds[i] ]]$title) else "",
       paste0(as.character(ui.li[[i]]), collapse="\n")
     )
   })
