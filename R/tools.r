@@ -31,3 +31,14 @@ stop.without.error <-function(...){
   display(...)
   stop()
 }
+
+# Knits the text in a temporary directory
+knit.text = function(text, envir=parent.frame(), fragment.only=TRUE, quiet=TRUE) {
+  owd <- setwd(tempdir())
+  on.exit(setwd(owd))
+
+  #knitr::opts_knit$set(root.dir = owd)
+
+  html = knitr::knit2html(text=text, quiet=TRUE,envir=envir, fragment.only=fragment.only)
+  html
+}

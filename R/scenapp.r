@@ -104,9 +104,9 @@ sca.show.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
   lower.menu = chooseFormButtons(forms=forms, show.fun = sca.show.form, current.form=name, postfix="_lower")
   next.btn = nextFormButton(forms=forms, show.fun = sca.show.form, current.form=name, label=sca$next.btn.label)
 
-  params = sca.form.params(form, sca)
+  form$params = sca.form.params(form, sca)
 
-  ui = formUI(form=form, params=params, scen.params=sca$scenvals)
+  ui = formUI(form=form, params=form$params, scen.params=sca$scenvals)
 
   extra.btns = list(
     sca.print.button(sca=sca),
@@ -123,10 +123,15 @@ sca.show.input.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
   restore.point("sca.show.input.form")
   forms=sca$forms
 
+  if (is.null(form))
+    form = sca$forms[[name]]
+
+
   menu = chooseFormButtons(forms=forms, show.fun = sca.show.form, current.form=name)
 
-  params = sca.form.params(form, sca)
-  ui = formUI(form=form, params=params, scen.params=sca$scenvals)
+  form$params = sca.form.params(form, sca)
+
+  ui = formUI(form=form, params=form$params, scen.params=sca$scenvals)
 
   addFormHandlers(form=form,success.handler = sca.input.submit,form.name=name, sca=sca)
 
@@ -271,7 +276,7 @@ sca.form.params = function(form,sca) {
   if (is.null(params)) params = list()
 
   if (!is.null(form[["scen"]])) {
-    params = copy.into.missing.fields(sca$scenvals[[form$scen]], form$params)
+    params = copy.into.missing.fields(sca$scenvals[[form$scen[1]]], form$params)
   } else {
     params = form$params
   }

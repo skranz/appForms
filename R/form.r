@@ -182,10 +182,9 @@ markdownFormUI = function(form=NULL,file=form[["file"]], text=form$md_source, pa
       return(knit(text=text,quiet=TRUE,envir=env))
     }
 
-    html = knitr::knit2html(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
+    html = knit.text(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
     html = gsub("&lt;!&ndash;html_preserve&ndash;&gt;","",html, fixed=TRUE)
     html = gsub("&lt;!&ndash;/html_preserve&ndash;&gt;","",html, fixed=TRUE)
-    #html =gsub("\\\\","\\\\\\\\",html, fixed=TRUE)
 
   } else {
     if (ret.val == "md") {

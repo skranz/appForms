@@ -83,85 +83,6 @@ split.into.anchor.blocks = function(text) {
 
 }
 
-examples.formMarkdownToHTML = function() {
-  text = '
-$\\\\alpha = {{alpha}}$
-
-The number is {{i}}.
-
-#< is_ok
-
-```{ r eval=TRUE}
-x = {{alpha}}
-plot(x)
-```
-
-#>
-
-```
-  Hi my text
-```
-'
-
-
-
-  params = list(alpha=0.01, is_ok=TRUE, i = 10)
-  html = formMarkdownToHTML(text=text,whiskers=FALSE, knit=FALSE)
-  html = paste0(html, collapse="\n")
-
-
-  setwd("D:/libraries/investgame/investgame2")
-  file="game2_result_inner.rmd"
-  text = readLines(file)
-
-  source("invest_game_2.r")
-
-  params = game2(i=0.1,w=1.2)
-
-  text = paste0(text,collapse="\n")
-  call.list = whiskers.call.list(text)
-  microbenchmark::microbenchmark(times = 10,
-    replace.whiskers(text,params, add.params=TRUE, call.list=call.list),
-    replace.whiskers(text,params, add.params=TRUE)
-  )
-
-  replace.whiskers(html,params, add.params=TRUE)
-
-
-  whiskers.call.list = whiskers.call.list(text)
-  markdown.blocks.call.list = markdown.blocks.call.list(text)
-
-
-  Rprof(tmp <- tempfile())
-  for (i in 1:10)
-    html = formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list, markdown.blocks.call.list = markdown.blocks.call.list)
-  Rprof()
-  summaryRprof(tmp)
-
-  Rprof(tmp <- tempfile())
-  for (i in 1:10)
-    html = formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = NULL)
-  Rprof()
-  summaryRprof(tmp)
-
-
-  formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE)
-
-  html = formMarkdownToHTML(text=text,whiskers=FALSE, knit=FALSE)
-  html = paste0(html, collapse="\n")
-
-
-  set.storing(FALSE)
-  microbenchmark::microbenchmark(times = 3,
-    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list, markdown.blocks.call.list = markdown.blocks.call.list),
-    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE,whiskers.call.list = whiskers.call.list),
-    formMarkdownToHTML(text=text,params=params,whiskers=TRUE, knit=!TRUE)
-  )
-
-
-  html
-}
-
 formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE, whiskers=TRUE, knit=TRUE, parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", select.blocks=TRUE, toHTML=TRUE, form=NULL, whiskers.call.list=form$whiskers.call.list, markdown.blocks.call.list = form$markdown.blocks.call.list,...) {
   restore.point("formMarkdownToHTML")
 
@@ -205,7 +126,7 @@ formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE
       env = parent.env
     }
 
-    html = knitr::knit2html(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
+    html = knit.text(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
     html = gsub("&lt;!&ndash;html_preserve&ndash;&gt;","",html, fixed=TRUE)
     html = gsub("&lt;!&ndash;/html_preserve&ndash;&gt;","",html, fixed=TRUE)
     #html =gsub("\\\\","\\\\\\\\",html, fixed=TRUE)
