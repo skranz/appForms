@@ -1,6 +1,6 @@
 
 html.table = function(df, sel.row=NULL, col.names=TRUE, row.names=FALSE, border=TRUE, bg.color =c("#ededfe","#fcfcff")) {
-  restore.point("hwrite.selTable")
+  restore.point("html.table")
   n = NROW(df)
 
   row.bgcolor = rep(bg.color,length=n)
