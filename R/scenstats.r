@@ -71,8 +71,8 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
   ui = list(
     h2(title),
     btns,
-    #uiOutput(dtid)
-    dataTableOutput(dtid)
+    uiOutput(dtid)
+    #dataTableOutput(dtid)
   )
 
   update.table = function(mode,...) {
@@ -108,8 +108,8 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
 
       #df = cbind(data.frame(pos=1:NROW(df)),df)
     }
-    #setUI(dtid, HTML(html.table(df)))
-    setDataTable(dtid, df, options=opts)
+    setUI(dtid, HTML(html.table(df)))
+    #setDataTable(dtid, df, options=opts)
   }
 
   # Add button handlers
