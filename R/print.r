@@ -15,7 +15,7 @@ printFormsUI = function(forms,forms.params, only.active=TRUE, add.form.title=TRU
   }
 
   ui.li = lapply(forms.inds, function(i) {
-    formUI(forms[[i]], params=forms.params[[i]])
+    form.ui(forms[[i]], params=forms.params[[i]])
   })
 
 

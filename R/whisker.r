@@ -58,9 +58,9 @@ select.markdown.blocks = function(txt, env=parent.frame(), call.list=NULL) {
   } else {
     calls = call.list[str_calls]
   }
-  #add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
+  add = sapply(calls, function(call) isTRUE(try(eval(call,envir=env))))
 
-  add = sapply(calls, function(call) isTRUE(eval(call,envir=env)))
+  #add = sapply(calls, function(call) isTRUE(eval(call,envir=env)))
 
 
   del.rows = unique(unlist(lapply(which(!add),function(ind){
@@ -100,7 +100,8 @@ markdown.blocks.call.list = function(txt) {
 
 }
 
-replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE, whiskers.call.list=NULL) {
+replace.whiskers <- function(str, env=parent.frame(), signif= getOption("whiskerSignifDigits")
+, round=  getOption("whiskerRoundDigits"), add.params=TRUE, whiskers.call.list=NULL) {
   restore.point("replace.whiskers")
 
   if (add.params) {
@@ -114,9 +115,12 @@ replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE,
     vals = lapply(s, function(su) {
       res = try(eval(parse(text=su),env))
       if (is(res,"try-error")) res = "`Error`"
-      if (is.numeric(res) & !is.null(digits)) {
-        digits = max(digits,ceiling(log(res+1,10)))
+      if (is.numeric(res) & !is.null(signif)) {
+        digits = max(signif,ceiling(log(res+1,10)))
         res = signif(res, digits)
+      }
+      if (is.numeric(res) & !is.null(round)) {
+        res = round(res, round)
       }
       res
     })
@@ -126,9 +130,12 @@ replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE,
     vals = lapply(calls, function(call) {
       res = try(eval(call,env))
       if (is(res,"try-error")) res = "`Error`"
-      if (is.numeric(res) & !is.null(digits)) {
-        digits = max(digits,ceiling(log(res+1,10)))
+      if (is.numeric(res) & !is.null(signif)) {
+        digits = max(signif,ceiling(log(res+1,10)))
         res = signif(res, digits)
+      }
+      if (is.numeric(res) & !is.null(round)) {
+        res = round(res, round)
       }
       res
     })
@@ -136,6 +143,8 @@ replace.whiskers <- function(str, env=parent.frame(), digits=5, add.params=TRUE,
   res = str.replace.at.pos(str, pos$outer, unlist(vals))
   res
 }
+
+
 
 whiskers.call.list = function(str) {
   restore.point("whiskers.call.list")

@@ -1,4 +1,4 @@
-init.markdown.form = function(form, start.token = "# <--START-->") {
+init.form.markdown = function(form, start.token = "# <--START-->") {
   restore.point("init.markdown.form")
 
   if (!is.null(form$file)) {
@@ -27,6 +27,88 @@ init.markdown.form = function(form, start.token = "# <--START-->") {
   form
 
 }
+
+
+form.ui.markdown = function(form=NULL,file=form[["file"]], text=form$md_source, parse.form=TRUE, params = form[["params"]], set.UTF8=TRUE, whiskers=TRUE, knit=isTRUE(form$knit), parent.env = parent.frame(), fragment.only=TRUE, start.token = "# <--START-->", ret.val="HTML", select.blocks=TRUE,whiskers.call.list=form$whiskers.call.list,markdown.blocks.call.list = form$markdown.blocks.call.list, ...) {
+  restore.point("form.ui.markdown")
+
+  if (!is.null(file) & is.null(text)) {
+    text = readLines(file,warn = FALSE)
+  } else {
+    if (length(text)==1) text = sep.lines(text)
+  }
+
+  if (set.UTF8)
+    Encoding(text)<-"UTF-8"
+
+  if (parse.form & is.null(form)) {
+    form = get.front.matter.form(text=text)
+  }
+
+
+  if (!is.null(start.token)) {
+    rows = which(text==start.token)
+    if (length(rows)>0) {
+      text = text[(rows[1]+1):length(text)]
+    }
+  }
+
+  if (select.blocks & !is.null(params)) {
+    text = sep.lines(text)
+    text = select.markdown.blocks(text, params, call.list = markdown.blocks.call.list)
+  }
+  if (whiskers) {
+    params$form = form
+    set.form(form)
+    text = paste0(text, collapse="\n")
+    text = replace.whiskers(text,params, whiskers.call.list=whiskers.call.list)
+  }
+  if (knit) {
+    if (!is.null(form))
+      set.form(form)
+    if (!is.null(params)) {
+      env = as.environment(params)
+      parent.env(env)<-parent.env
+    } else {
+      env = parent.env
+    }
+    if (ret.val == "md") {
+      return(knit(text=text,quiet=TRUE,envir=env))
+    }
+
+    html = knit.text(text=text, quiet=TRUE,envir=env, fragment.only=fragment.only)
+    html = gsub("&lt;!&ndash;html_preserve&ndash;&gt;","",html, fixed=TRUE)
+    html = gsub("&lt;!&ndash;/html_preserve&ndash;&gt;","",html, fixed=TRUE)
+
+  } else {
+    if (ret.val == "md") {
+      return(text)
+    }
+    # Neccessary to make mathjax work
+    #text =gsub("\\\\","\\\\\\\\",text, fixed=TRUE)
+    html = markdownToHTML(text=text, fragment.only=fragment.only)
+  }
+  #rmarkdown::render(text=text)
+  HTML(html)
+
+}
+
+
+
+view.form.markdown= function(file=NULL,form=NULL, params=NULL, knit=TRUE, launch.browser = rstudioapi::viewer, ui = NULL,...) {
+  app = eventsApp()
+  if (is.null(ui)) {
+    ui = form.ui.markdown(file=file, form=form, params=params, knit=knit,...)
+    form = get.form()
+  }
+  if (!is.null(form)) {
+    add.form.handlers(form,function(...) cat("\nGreat, all values are ok!"))
+  }
+  app$ui = fluidPage(with_mathjax(ui))
+  runEventsApp(app, launch.browser=launch.browser)
+}
+
+
 
 inject.front.matter.form = function(form, text=form[["text"]]) {
   restore.point("inject.fron.matter.form")
@@ -127,3 +209,4 @@ trim_trailing_ws = function (x)
 {
     sub("\\s+$", "", x)
 }
+

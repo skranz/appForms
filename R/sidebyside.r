@@ -16,7 +16,7 @@ examples.side.by.side = function() {
   writeLines(html,"test.html")
 }
 
-init.side.by.side.form = function(form,...) {
+init.form.side.by.side = function(form,...) {
   form$forms = lapply(form$forms, init.form)
   scens = unlist(lapply(form$forms, function(form) form$scen))
   form$scen = c(form[["scen"]], scens)
@@ -24,11 +24,11 @@ init.side.by.side.form = function(form,...) {
   form
 }
 
-sideBySideFormUI = function(form, params=NULL, scen.params=NULL,...) {
-  restore.point("sideBySideFormUI")
+form.ui.side.by.side = function(form, params=NULL, scen.params=NULL,...) {
+  restore.point("form.ui.side.by.side")
 
   li = lapply(seq_along(form$forms), function(i) {
-    restore.point("sideBySideFormUI.inner")
+    restore.point("form.ui.side.by.side.inner")
 
     sform = form$forms[[i]]
     if (!is.null(scen.params)) {
@@ -108,7 +108,7 @@ formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE
   }
   if (whiskers) {
     params$form = form
-    setForm(form)
+    set.form(form)
     text = paste0(text, collapse="\n")
     text = replace.whiskers(text,params, add.params=TRUE, whiskers.call.list=whiskers.call.list)
   }
@@ -117,7 +117,7 @@ formMarkdownToHTML =  function(text, params=NULL, parse.form=TRUE, set.UTF8=TRUE
 
   if (knit) {
     if (!is.null(form))
-      setForm(form)
+      set.form(form)
     if (!is.null(params)) {
       env = as.environment(params)
       parent.env(env)<-parent.env

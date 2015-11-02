@@ -106,7 +106,7 @@ sca.show.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
 
   form$params = sca.form.params(form, sca)
 
-  ui = formUI(form=form, params=form$params, scen.params=sca$scenvals)
+  ui = form.ui(form=form, params=form$params, scen.params=sca$scenvals)
 
   extra.btns = list(
     sca.print.button(sca=sca),
@@ -131,9 +131,9 @@ sca.show.input.form = function(name, sca=app$sca, app=getApp(),form=NULL,...) {
 
   form$params = sca.form.params(form, sca)
 
-  ui = formUI(form=form, params=form$params, scen.params=sca$scenvals)
+  ui = form.ui(form=form, params=form$params, scen.params=sca$scenvals)
 
-  addFormHandlers(form=form,success.handler = sca.input.submit,form.name=name, sca=sca)
+  add.form.handlers(form=form,success.handler = sca.input.submit,form.name=name, sca=sca)
 
   extra.btns = list(
     sca.print.button(sca=sca),
