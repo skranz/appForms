@@ -1,13 +1,16 @@
 
-store.rank =function(store, field, value=store$li[[ind]][[field]], ind=length(store$li)) {
+store.rank =function(store, field, value=store$li[[ind]][[field]], ind=length(store$li), tol=1e-12) {
   restore.point("store.rank")
 
   #n = length(store$li)
 
   vals = store$df[[field]]
   n_total = sum(!is.na(vals))
-  rank_min = sum(vals>value,na.rm = TRUE)+1
-  rank_max = n_total-sum(vals<value,na.rm = TRUE)
+  better = sum( vals-value >= tol ,na.rm = TRUE)
+  worse = sum( value-vals >= tol ,na.rm = TRUE)
+
+  rank_min = better+1
+  rank_max = n_total-worse+1
 
   nlist(n_total, rank_min, rank_max)
 
@@ -71,6 +74,7 @@ allResultsTableUI = function(store, data=store$get.data(), name="resultsTable", 
   ui = list(
     h2(title),
     btns,
+    br(),
     uiOutput(dtid)
     #dataTableOutput(dtid)
   )

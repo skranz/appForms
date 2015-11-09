@@ -177,12 +177,13 @@ sca.run.scen = function(scen.name, sca, scen=sca$scens[[scen.name]], global.para
   ret = eval(scen$run_, sca$values)
   ret = copy.into.missing.fields(ret,global.params)
 
-  stats = store.rank(store = store, field=scen$value_col)
+  stats = store.rank(store = store, field=scen$value_col,value = ret[[scen$value_col]])
 
   vals = ret[!sapply(ret, is.function)]
   vals = c(list(userid=sca$userid, nickname=sca$nickname, scen_name=scen.name, scen_title=scen$scen_title),vals, stats)
 
   store$add(vals)
+
   sca$scenvals[[scen.name]] = vals
 
 }
