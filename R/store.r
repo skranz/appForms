@@ -43,17 +43,17 @@ file.mem.store = function(name, file.name=paste0(name,".yaml"), is.df=TRUE, load
       }
     }
     # Somehow sometimes a list was stored
-    st$df = as.data.frame(lapply(st$df, function(vals) {
-      if (!is.list(vals)) vals
-      unlist(vals)
-    }))
+    #st$df = as.data.frame(lapply(st$df, function(vals) {
+    #  if (!is.list(vals)) vals
+    #  unlist(vals)
+    #}))
 
 
     wvals = vals
     wvals$DATE_TIME = as.character(wvals$DATE_TIME)
     wvals$DATE = as.character(wvals$DATE)
 
-    json = paste0(toJSON(wvals), collapse="")
+    json = paste0(toJSON(wvals,na="string"), collapse="")
 
     con = file(file.name, open="at", blocking=FALSE)
     write(paste0("- ",json), file=con)
